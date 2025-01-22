@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 interface Message {
   role: 'user' | 'assistant';
   content: string;
-  id: string; // Added for animation keys
+  id: string;
 }
 
 const GROQ_API_KEY = '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';
@@ -17,6 +17,7 @@ const ChatInterface = () => {
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -24,6 +25,17 @@ const ChatInterface = () => {
 
   useEffect(() => {
     scrollToBottom();
+    // Adjust viewport height for mobile
+    const vh = window.innerHeight * 0.01;
+    document.documentElement.style.setProperty('--vh', `${vh}px`);
+
+    const handleResize = () => {
+      const vh = window.innerHeight * 0.01;
+      document.documentElement.style.setProperty('--vh', `${vh}px`);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, [messages]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -33,7 +45,7 @@ const ChatInterface = () => {
     const userMessage = { 
       role: 'user' as const, 
       content: input,
-      id: Date.now().toString() // Add unique ID for animation
+      id: Date.now().toString()
     };
     setMessages(prev => [...prev, userMessage]);
     setInput('');
@@ -70,14 +82,14 @@ const ChatInterface = () => {
       const assistantMessage = {
         role: 'assistant' as const,
         content: data.choices[0].message.content,
-        id: Date.now().toString() // Add unique ID for animation
+        id: Date.now().toString()
       };
       setMessages(prev => [...prev, assistantMessage]);
     } catch (error) {
       console.error('Error:', error);
       const errorMessage = {
         role: 'assistant' as const,
-        content: "I apologize, but I encountered an error while processing your request. This could be due to:\n\n1. API rate limits\n2. Network connectivity issues\n3. API endpoint being unavailable\n\nPlease try again in a moment.",
+        content: "I apologize, but I encountered an error while processing your request. Please try again in a moment.",
         id: Date.now().toString()
       };
       setMessages(prev => [...prev, errorMessage]);
@@ -87,33 +99,46 @@ const ChatInterface = () => {
   };
 
   return (
-    <div className="flex h-screen bg-gray-900">
+    <div className="flex h-screen bg-gray-900" style={{ height: 'calc(var(--vh, 1vh) * 100)' }}>
+      {/* Mobile Sidebar Toggle */}
+      <button
+        onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+        className="md:hidden fixed top-4 left-4 z-50 text-white bg-gray-800 p-2 rounded-full hover:bg-gray-700 transition-transform duration-200 hover:scale-110"
+      >
+        <ArrowLeft className={`w-5 h-5 transform transition-transform duration-300 ${isSidebarOpen ? 'rotate-180' : ''}`} />
+      </button>
+
       {/* Sidebar with slide animation */}
-      <div className="w-64 bg-gray-800 p-4 hidden md:block transform transition-transform duration-300 ease-in-out">
-        <button
-          onClick={() => navigate('/')}
-          className="flex items-center space-x-2 text-gray-300 hover:text-white mb-8 transition-colors duration-200 hover:scale-105 transform"
-        >
-          <ArrowLeft className="w-5 h-5" />
-          <span>Back to Home</span>
-        </button>
-        <div className="text-gray-400 text-sm">
-          <h3 className="font-medium mb-2">Previous Chats</h3>
+      <div 
+        className={`fixed md:static w-64 bg-gray-800 h-full transform transition-transform duration-300 ease-in-out z-40 
+          ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}
+      >
+        <div className="p-4">
+          <button
+            onClick={() => navigate('/')}
+            className="flex items-center space-x-2 text-gray-300 hover:text-white mb-8 transition-all duration-200 hover:scale-105"
+          >
+            <ArrowLeft className="w-5 h-5" />
+            <span>Back to Home</span>
+          </button>
+          <div className="text-gray-400 text-sm">
+            <h3 className="font-medium mb-2">Previous Chats</h3>
+          </div>
         </div>
       </div>
 
       {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col relative">
         {/* Chat Messages */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-20">
           {messages.map((message) => (
             <div
               key={message.id}
               className={`flex items-start space-x-3 ${
                 message.role === 'assistant' ? 'bg-gray-800' : ''
-              } p-4 rounded-lg transform transition-all duration-300 ease-out opacity-0 translate-y-4 animate-message`}
+              } p-4 rounded-lg animate-message`}
             >
-              <div className="flex-shrink-0 transition-transform duration-200 hover:scale-110">
+              <div className="flex-shrink-0 hover:scale-110 transition-transform duration-200">
                 {message.role === 'assistant' ? (
                   <Bot className="w-6 h-6 text-blue-500" />
                 ) : (
@@ -132,26 +157,34 @@ const ChatInterface = () => {
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Input Area with animations */}
-        <form onSubmit={handleSubmit} className="p-4 border-t border-gray-700 animate-slideUp">
-          <div className="flex space-x-4">
+        {/* Input Area - Fixed at bottom */}
+        <form onSubmit={handleSubmit} className="absolute bottom-0 left-0 right-0 p-4 bg-gray-900 border-t border-gray-700 animate-slideUp">
+          <div className="flex space-x-4 max-w-full">
             <input
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Type your message..."
-              className="flex-1 bg-gray-800 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200 hover:bg-gray-700 focus:scale-[1.02] transform"
+              className="flex-1 bg-gray-800 text-white rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200 hover:bg-gray-700"
             />
             <button
               type="submit"
               disabled={isLoading}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-all duration-200 disabled:opacity-50 hover:scale-105 active:scale-95 transform"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-all duration-200 disabled:opacity-50 hover:scale-105 active:scale-95 flex items-center justify-center"
             >
               <Send className="w-5 h-5" />
             </button>
           </div>
         </form>
       </div>
+
+      {/* Overlay for mobile sidebar */}
+      {isSidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-30 md:hidden"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
 
       {/* Add global styles for animations */}
       <style>{`
@@ -181,7 +214,7 @@ const ChatInterface = () => {
 
         @keyframes slideUp {
           from {
-            transform: translateY(100%);
+            transform: translateY(20px);
             opacity: 0;
           }
           to {
@@ -192,6 +225,23 @@ const ChatInterface = () => {
 
         .animate-slideUp {
           animation: slideUp 0.5s ease-out;
+        }
+
+        /* Prevent content from being hidden under mobile keyboard */
+        @media (max-width: 768px) {
+          .input-wrapper {
+            position: sticky;
+            bottom: 0;
+            background: #111827;
+            padding: 1rem;
+            border-top: 1px solid #374151;
+          }
+        }
+
+        /* Smooth scroll behavior */
+        .messages-container {
+          scroll-behavior: smooth;
+          -webkit-overflow-scrolling: touch;
         }
       `}</style>
     </div>
