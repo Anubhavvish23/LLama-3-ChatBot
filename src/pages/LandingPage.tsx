@@ -7,6 +7,13 @@ const LandingPage = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-800 text-white">
+      {/* Credit Text at Top */}
+      <div className="container mx-auto px-6 pt-4 text-center text-gray-400">
+        <p className="text-sm animate-fadeIn">
+          Designed and developed by Anubhav 🚀
+        </p>
+      </div>
+
       {/* Animated Navigation */}
       <nav className="container mx-auto px-6 py-4 flex justify-between items-center">
         <div className="flex items-center space-x-2 hover:scale-105 transform transition-transform duration-200">
@@ -22,7 +29,7 @@ const LandingPage = () => {
       </nav>
 
       {/* Main Content with Staggered Animations */}
-      <main className="container mx-auto px-6 py-20">
+      <main className="container mx-auto px-6 py-16">
         <div className="text-center max-w-3xl mx-auto">
           <h1 className="text-5xl font-bold mb-6 animate-slideDown">
             Experience the Power of Advanced AI Conversations
@@ -72,13 +79,6 @@ const LandingPage = () => {
           ))}
         </div>
       </main>
-
-      {/* Footer with Credit */}
-      <footer className="container mx-auto px-6 py-4 text-center text-gray-400">
-        <p className="text-sm animate-fadeIn">
-          Designed and developed by Anubhav 🚀
-        </p>
-      </footer>
 
       {/* Add global styles for animations */}
       <style>{`
