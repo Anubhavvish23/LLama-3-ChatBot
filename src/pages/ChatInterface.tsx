@@ -8,7 +8,7 @@ interface Message {
   id: string;
 }
 
-const GROQ_API_KEY = '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';
+const GROQ_API_KEY = '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';
 const API_URL = 'https://api.groq.com/openai/v1/chat/completions';
 
 const ChatInterface = () => {
